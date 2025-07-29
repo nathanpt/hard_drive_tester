@@ -20,6 +20,7 @@ This tool performs an in-depth assessment of a hard drive's performance and inte
 - **User-Friendly**: Includes safety warnings and requires confirmation before proceeding
 - **Robust Error Handling**: Gracefully handles missing tools, device issues, and test failures
 - **Progress Tracking**: Shows test completion status throughout the process
+- **Flexible Testing**: Option to skip the time-consuming badblocks test for faster results
 
 ## Requirements
 
@@ -63,20 +64,31 @@ Most of these tools are designed for Unix-like systems. For Windows:
 
 ```bash
 # On Linux
-sudo python3 hard_drive_test.py /dev/sdX
+sudo python hard_drive_test.py /dev/sdX
 
 # On Windows (with WSL)
 sudo python3 hard_drive_test.py /dev/sdX
+
+# Skip the time-consuming badblocks test
+sudo python hard_drive_test.py /dev/sdX --skip-badblocks
 ```
 
 Replace `/dev/sdX` with your target drive (e.g., `/dev/sda`, `/dev/nvme0n1`).
+
+### Command Line Options
+
+| Option | Description |
+|--------|-------------|
+| `--skip-badblocks` | Skip the badblocks test, which significantly reduces test time (from hours to minutes) |
 
 ### Important Notes
 
 - **Data Safety**: While the default tests are non-destructive, it's always recommended to backup important data before testing
 - **Drive Wear**: Intensive testing can cause additional wear on SSDs
 - **System Load**: These tests are resource-intensive and may affect system performance while running
-- **Time Requirements**: A full test suite can take significant time to complete, especially on larger drives
+- **Time Requirements**: 
+  - Full test suite with badblocks: Can take 20-40 hours for 10TB drives
+  - Without badblocks (using `--skip-badblocks`): Approximately 15-20 minutes
 
 ## Sample Output
 
@@ -97,6 +109,8 @@ Initial SMART Status
 Badblocks Scan
 --------------
 [Output from badblocks -v /dev/sda]
+or
+[Test skipped by user request]
 
 I/O Ping Latency
 ----------------

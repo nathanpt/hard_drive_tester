@@ -8,6 +8,7 @@ Results are aggregated into a single timestamped file.
 
 Usage:
     linux: sudo python3 hard_drive_test.py /dev/sdX
+    linux: sudo python3 hard_drive_test.py /dev/sdX --skip-badblocks
 """
 
 import argparse
@@ -25,22 +26,28 @@ from pathlib import Path
 class HardDriveTest:
     """Class to manage hard drive testing using various tools."""
 
-    def __init__(self, device):
+    def __init__(self, device, skip_badblocks=False):
         """
         Initialize the test environment.
         
         Args:
             device (str): The device identifier (e.g., /dev/sda)
+            skip_badblocks (bool): Whether to skip the badblocks test
         """
         self.device = device
         self.timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         self.results_file = f"hard_drive_test_{self.timestamp}.txt"
         self.logger = self._setup_logging()
+        self.skip_badblocks = skip_badblocks
         
         # Required tools
         self.required_tools = [
-            "fio", "badblocks", "ioping", "iostat", "sysbench", "smartctl"
+            "fio", "ioping", "iostat", "sysbench", "smartctl"
         ]
+        
+        # Add badblocks to required tools only if we're not skipping it
+        if not self.skip_badblocks:
+            self.required_tools.append("badblocks")
         
         # Test status tracking
         self.tests_completed = 0
@@ -410,7 +417,14 @@ The tests will take a significant amount of time to complete.
         
         # Run tests
         self.run_smart_test(initial=True)
-        self.run_badblocks_test()
+        
+        if self.skip_badblocks:
+            self.logger.info("Skipping badblocks test as requested")
+            self._write_section("Badblocks Scan", "Test skipped by user request")
+            self.tests_completed += 1
+        else:
+            self.run_badblocks_test()
+            
         self.run_ioping_test()
         self.run_fio_tests()
         self.run_sysbench_test()
@@ -434,9 +448,14 @@ def main():
         "device", 
         help="Device to test (e.g., /dev/sda)"
     )
+    parser.add_argument(
+        "--skip-badblocks",
+        action="store_true",
+        help="Skip the badblocks test (significantly reduces test time)"
+    )
     args = parser.parse_args()
     
-    tester = HardDriveTest(args.device)
+    tester = HardDriveTest(args.device, skip_badblocks=args.skip_badblocks)
     
     # Check requirements
     if not tester.check_requirements():
